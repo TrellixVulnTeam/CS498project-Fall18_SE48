@@ -1,10 +1,10 @@
 # CS498 Deep Learning Project
 
 ## C-LSTM Implementation
-> Paper: [A C-LSTM Neural Network for Text Classification](https://arxiv.org/abs/1511.08630)
-> Code Reference: [GitHub: cnn-lstm-bilstm-deepcnn-clstm-in-pytorch](https://github.com/bamtercelboo/cnn-lstm-bilstm-deepcnn-clstm-in-pytorch)
-> Contributor: Siwei
-> Last Update: 2018-11-14
+> Paper: [A C-LSTM Neural Network for Text Classification](https://arxiv.org/abs/1511.08630)  
+> Code Reference: [GitHub: cnn-lstm-bilstm-deepcnn-clstm-in-pytorch](https://github.com/bamtercelboo/cnn-lstm-bilstm-deepcnn-clstm-in-pytorch)  
+> Contributor: Siwei  
+> Last Update: 2018-11-14  
 
 ### Current Data
 SST-1 and SST-2 from original [GitHub Repository](https://github.com/bamtercelboo/cnn-lstm-bilstm-deepcnn-clstm-in-pytorch/tree/master/Data).
