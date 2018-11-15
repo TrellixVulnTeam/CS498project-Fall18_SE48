@@ -17,6 +17,7 @@ class CNN_Text(nn.Module):
         Co = args.kernel_num
         Ks = args.kernel_sizes
 
+        #Problem over here: do not use word2vec
         self.embed = nn.Embedding(V, D)
         # self.convs1 = [nn.Conv2d(Ci, Co, (K, D)) for K in Ks]
         self.convs1 = nn.ModuleList([nn.Conv2d(Ci, Co, (K, D)) for K in Ks])
@@ -45,7 +46,7 @@ class CNN_Text(nn.Module):
 
         x = [F.max_pool1d(i, i.size(2)).squeeze(2) for i in x]  # [(N, Co), ...]*len(Ks)
 
-        x = torch.cat(x, 1)
+        x = torch.cat(x, 1) # why need this ?
 
         '''
         x1 = self.conv_and_pool(x,self.conv13) #(N,Co)

@@ -11,6 +11,7 @@ import mydatasets
 
 
 parser = argparse.ArgumentParser(description='CNN text classificer')
+
 # learning
 parser.add_argument('-lr', type=float, default=0.001, help='initial learning rate [default: 0.001]')
 parser.add_argument('-epochs', type=int, default=256, help='number of epochs for train [default: 256]')
@@ -55,6 +56,7 @@ def sst(text_field, label_field,  **kargs):
 
 
 # load MR dataset
+## Problem over here: no test_iter?
 def mr(text_field, label_field, **kargs):
     train_data, dev_data = mydatasets.MR.splits(text_field, label_field)
     text_field.build_vocab(train_data, dev_data)
@@ -113,4 +115,3 @@ else:
     except KeyboardInterrupt:
         print('\n' + '-' * 89)
         print('Exiting from training early')
-
