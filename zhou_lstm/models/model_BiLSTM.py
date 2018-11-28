@@ -26,14 +26,17 @@ class BiLSTM(nn.Module):
         self.args = args
         self.hidden_dim = args.lstm_hidden_dim
         self.num_layers = args.lstm_num_layers
+
         V = args.embed_num
         D = args.embed_dim
         C = args.class_num
-        # self.embed = nn.Embedding(V, D, max_norm=config.max_norm)
-        self.embed = nn.Embedding(V, D, padding_idx=args.paddingId)
+        paddingId = args.paddingId
+        self.embed = nn.Embedding(V, D, padding_idx=paddingId)
+
         # pretrained  embedding
         if args.word_Embedding:
             self.embed.weight.data.copy_(args.pretrained_weight)
+
         self.bilstm = nn.LSTM(D, self.hidden_dim // 2, num_layers=1, dropout=args.dropout, bidirectional=True, bias=False)
         print(self.bilstm)
 

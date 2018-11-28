@@ -11,6 +11,7 @@ import datetime
 import Config.config as configurable
 import torch
 import torchtext.data as data
+
 from models.model_CNN import CNN_Text
 from models.model_HighWay_CNN import HighWay_CNN
 from models.model_DeepCNN import DEEP_CNN
@@ -28,6 +29,7 @@ from models.model_CNN_MUI import CNN_MUI
 from models.model_DeepCNN_MUI import DEEP_CNN_MUI
 from models.model_BiLSTM_1 import BiLSTM_1
 from models.model_HighWay_BiLSTM_1 import HighWay_BiLSTM_1
+
 import train_ALL_CNN
 import train_ALL_LSTM
 from DataLoader import mydatasets_self_five
@@ -184,11 +186,25 @@ def Load_Data():
     if config.FIVE_CLASS_TASK:
         print("Executing 5 Classification Task......")
         if config.CNN_MUI is True or config.DEEP_CNN_MUI is True:
-            train_iter, dev_iter, test_iter = mrs_five_mui(config.datafile_path, config.name_trainfile, config.name_devfile, config.name_testfile, config.char_data, text_field=config.text_field, label_field=config.label_field,
-                                                           static_text_field=config.static_text_field, static_label_field=config.static_label_field, device=-1, repeat=False, shuffle=config.epochs_shuffle, sort=False)
+            train_iter, dev_iter, test_iter = mrs_five_mui(config.datafile_path, config.name_trainfile,
+                                                           config.name_devfile, config.name_testfile,
+                                                           config.char_data,
+                                                           text_field=config.text_field,
+                                                           label_field=config.label_field,
+                                                           static_text_field=config.static_text_field,
+                                                           static_label_field=config.static_label_field,
+                                                           device=-1, repeat=False,
+                                                           shuffle=config.epochs_shuffle,
+                                                           sort=False)
         else:
-            train_iter, dev_iter, test_iter = mrs_five(config.datafile_path, config.name_trainfile, config.name_devfile, config.name_testfile, config.char_data,
-                                                       config.text_field, config.label_field, device=-1, repeat=False, shuffle=config.epochs_shuffle, sort=False)
+            train_iter, dev_iter, test_iter = mrs_five(config.datafile_path, config.name_trainfile,
+                                                       config.name_devfile, config.name_testfile,
+                                                       config.char_data,
+                                                       text_field=config.text_field,
+                                                       label_field=config.label_field,
+                                                       device=-1, repeat=False,
+                                                       shuffle=config.epochs_shuffle,
+                                                       sort=False)
     elif config.TWO_CLASS_TASK:
         print("Executing 2 Classification Task......")
         if config.CNN_MUI is True or config.DEEP_CNN_MUI is True:
@@ -437,7 +453,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Neural Networks")
     parser.add_argument('--config_file', default="./Config/config.cfg")
     config = parser.parse_args()
-
     config = configurable.Configurable(config_file=config.config_file)
     if config.cuda is True:
         print("Using GPU To Train......")

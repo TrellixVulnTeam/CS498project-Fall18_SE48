@@ -13,14 +13,15 @@ from torch.utils.data import DataLoader, TensorDataset
 import data_helpers
 
 class CNN(nn.Module):
-    def __init__(self, kernel_sizes=[3,4,5], num_filters=100, embedding_dim=300, pretrained_embeddings=None,
-                 vocab_size=None, sentence_len=None, mode=None, ConvMethod=None, num_classes=None):
+    def __init__(self, kernel_sizes=[3,4,5], num_filters=100, embedding_dim=300,
+                    pretrained_embeddings=None, vocab_size=None, sentence_len=None,
+                                    mode=None, ConvMethod=None, num_classes=None):
 
         super(CNN, self).__init__()
         self.kernel_sizes = kernel_sizes
         self.embedding = nn.Embedding(vocab_size, embedding_dim)
         self.embedding.weight.data.copy_(torch.from_numpy(pretrained_embeddings))
-        self.embedding.weight.requires_grad = mode=="nonstatic"
+        self.embedding.weight.requires_grad = (mode=="nonstatic")
         self.ConvMethod = ConvMethod
 
         use_cuda = torch.cuda.is_available()
@@ -28,10 +29,10 @@ class CNN(nn.Module):
         if use_cuda:
             self.embedding = self.embedding.cuda()
 
-        conv_blocks = []
+        conv_blocks = [] #blocks list
         for kernel_size in kernel_sizes:
-            # maxpool kernel_size must <= sentence_len - kernel_size+1, otherwise, it could output empty
-            maxpool_kernel_size = sentence_len - kernel_size +1
+            # maxpool kernel_size must <= sentence_len - kernel_size+1, otherwise, output empty
+            maxpool_kernel_size = sentence_len - kernel_size + 1
 
             if ConvMethod == "in_channel__is_embedding_dim":
                 conv1d = nn.Conv1d(in_channels = embedding_dim, out_channels = num_filters,
@@ -45,13 +46,14 @@ class CNN(nn.Module):
                 nn.ReLU(),
                 nn.MaxPool1d(kernel_size = maxpool_kernel_size)
             )
+
             if use_cuda:
                 component = component.cuda()
 
             conv_blocks.append(component)
 
-
-        self.conv_blocks = nn.ModuleList(conv_blocks)   # ModuleList is needed for registering parameters in conv_blocks
+        # ModuleList is needed for registering parameters in conv_blocks
+        self.conv_blocks = nn.ModuleList(conv_blocks)
         self.fc = nn.Linear(num_filters*len(kernel_sizes), num_classes)
 
     def forward(self, x):       # x: (batch, sentence_len)
@@ -60,23 +62,27 @@ class CNN(nn.Module):
         if self.ConvMethod == "in_channel__is_embedding_dim":
             #    input:  (batch, in_channel=1, in_length=sentence_len*embedding_dim),
             #    output: (batch, out_channel=num_filters, out_length=sentence_len-...)
-            x = x.transpose(1,2)  # needs to convert x to (batch, embedding_dim, sentence_len)
+            # needs to convert x to (batch, embedding_dim, sentence_len)
+            x = x.transpose(1,2)
         else:
             #    input:  (batch, in_channel=embedding_dim, in_length=sentence_len),
             #    output: (batch, out_channel=num_filters, out_length=sentence_len-...)
-            x = x.view(x.size(0), 1, -1)  # needs to convert x to (batch, 1, sentence_len*embedding_dim)
+            # needs to convert x to (batch, 1, sentence_len*embedding_dim)
+            x = x.view(x.size(0), 1, -1)
 
-        x_list= [conv_block(x) for conv_block in self.conv_blocks]
-        out = torch.cat(x_list, 2)
+        # x_list is conv results from different conv layers
+        x_list = [conv_block(x) for conv_block in self.conv_blocks]
+        out = torch.cat(x_list, 2) #??
         out = out.view(out.size(0), -1)
         feature_extracted = out
         out = F.dropout(out, p=0.5, training=self.training)
-        return F.softmax(self.fc(out), dim=1), feature_extracted
+        result = F.softmax(self.fc(out), dim=1)
+        return result, feature_extracted
 
 
 def evaluate(model, x_test, y_test):
     inputs = Variable(x_test)
-    preds, vector = model(inputs)
+    preds, vector = model(inputs) # model has been set to predict
     preds = torch.max(preds, 1)[1]
 
     use_cuda = torch.cuda.is_available()
@@ -125,13 +131,14 @@ def train_test_one_split(X, Y, cv, train_index, test_index,
     train_loader = DataLoader(dataset_train, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=False)
 
 
-    use_cuda = torch.cuda.is_available()
+    use_cuda = torch.cuda.is_available() #check if cuda available
     if use_cuda:
         x_test = x_test.cuda()
         y_test = y_test.cuda()
 
     # vocab_size, sentence_len, mode, ConvMethod
-    model = CNN(kernel_sizes, num_filters, embedding_dim, pretrained_embeddings, vocab_size, sentence_len, mode, ConvMethod, num_classes)
+    model = CNN(kernel_sizes, num_filters, embedding_dim,
+                pretrained_embeddings, vocab_size, sentence_len, mode, ConvMethod, num_classes)
 
     if cv==0:
         print("\n{}\n".format(str(model)))
@@ -145,25 +152,35 @@ def train_test_one_split(X, Y, cv, train_index, test_index,
 
     for epoch in range(10):
         tic = time.time()
+
+        ########--1.train--###########
+        # 1.1 set model to train
         model.train()
+        # 1.2 batch SGD
         for i, (inputs, labels) in enumerate(train_loader):
-            inputs, labels = Variable(inputs), Variable(labels)
+            # NOTE: PyTorch 0.4 merges the Variable and Tensor class into one
+            # 1.2.1 batch forward
             if use_cuda:
-                inputs, labels = inputs.cuda(), labels.cuda()
-
-            preds, _ = model(inputs)
-            if use_cuda:
+                inputs, labels = Variable(inputs).cuda(), Variable(labels).cuda()
+                preds, _ = model(inputs)
                 preds = preds.cuda()
+            else:
+                inputs, labels = Variable(inputs), Variable(labels)
+                preds, _ = model(inputs)
+            ## 1.2.2 batch backward
             loss = loss_fn(preds, labels)
-
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
+        ########--2.evaluate--###########
         model.eval()
         eval_acc, sentence_vector = evaluate(model, x_test, y_test)
-        # pytorch 0.4 and later
-        print('[epoch: {:d}] train_loss: {:.3f}   acc: {:.3f}   ({:.1f}s)'.format(epoch, loss.item(), eval_acc, time.time()-tic) )
+
+        ########--3.summary--############
+        print('[epoch: {:d}] train_loss: {:.3f}   acc: {:.3f}   ({:.1f}s)'
+                                .format(epoch, loss.item(), eval_acc, time.time()-tic))
+
     return eval_acc, sentence_vector
 
 
@@ -176,7 +193,7 @@ def do_cnn(X, Y, batch_size, kernel_sizes, num_filters, embedding_dim, pretraine
     acc_list = []
     tic = time.time()
     sentence_vectors, y_tests = [], []
-    for cv, (train_index, test_index) in enumerate(kf.split(X)):
+    for cv, (train_index, test_index) in enumerate(kf.split(X)): #get index from the kFold's enumrate
         acc, sentence_vec = train_test_one_split(X, Y, cv, train_index, test_index,
                                                  batch_size,  kernel_sizes, num_filters,
                                                  embedding_dim, pretrained_embeddings,
@@ -210,6 +227,7 @@ def main():
     mode = "static"     # mode = "nonstatic"
     use_pretrained_embeddings = True    # use_pretrained_embeddings = False
     ConvMethod = "in_channel__is_1"  # ConvMethod = "in_channel__is_embedding_dim"
+
     X, Y, vocabulary, vocabulary_inv_list = data_helpers.load_data()
     vocab_size = len(vocabulary_inv_list)
     sentence_len = X.shape[1]
