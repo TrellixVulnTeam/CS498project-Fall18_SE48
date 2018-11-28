@@ -19,21 +19,24 @@ def train(data, params):
         print("loading word2vec...")
         word_vectors = KeyedVectors.load_word2vec_format("GoogleNews-vectors-negative300.bin", binary=True)
 
-        wv_matrix = []
+        wv_matrix = [] # wv_matrix will contain the word2vec dict for our dataset
         for i in range(len(data["vocab"])):
             word = data["idx_to_word"][i]
-            if word in word_vectors.vocab:
+            if word in word_vectors.vocab: #there are some nonsense word in data["idx_to_word"]
                 wv_matrix.append(word_vectors.word_vec(word))
             else:
-                wv_matrix.append(np.random.uniform(-0.01, 0.01, 300).astype("float32"))
+                wv_matrix.append(np.random.uniform(-0.01, 0.01, 300).astype("float32")) #rand a vec with 300 dim
 
         # one for UNK and one for zero padding
-        wv_matrix.append(np.random.uniform(-0.01, 0.01, 300).astype("float32"))
-        wv_matrix.append(np.zeros(300).astype("float32"))
+        wv_matrix.append(np.random.uniform(-0.01, 0.01, 300).astype("float32")) # UNK
+        wv_matrix.append(np.zeros(300).astype("float32")) # zero padding
         wv_matrix = np.array(wv_matrix)
         params["WV_MATRIX"] = wv_matrix
 
-    model = CNN(**params).cuda(params["GPU"])
+    use_cuda = torch.cuda.is_available()
+    model = CNN(**params)
+    if use_cuda:
+        model = model.cuda(params["GPU"])
 
     parameters = filter(lambda p: p.requires_grad, model.parameters())
     optimizer = optim.Adadelta(parameters, params["LEARNING_RATE"])
@@ -46,15 +49,19 @@ def train(data, params):
         data["train_x"], data["train_y"] = shuffle(data["train_x"], data["train_y"])
 
         for i in range(0, len(data["train_x"]), params["BATCH_SIZE"]):
-            batch_range = min(params["BATCH_SIZE"], len(data["train_x"]) - i)
+            batch_range = min(params["BATCH_SIZE"], len(data["train_x"]) - i)# boundary check
 
             batch_x = [[data["word_to_idx"][w] for w in sent] +
-                       [params["VOCAB_SIZE"] + 1] * (params["MAX_SENT_LEN"] - len(sent))
+                       [params["VOCAB_SIZE"] + 1] * (params["MAX_SENT_LEN"] - len(sent)) # for padding
                        for sent in data["train_x"][i:i + batch_range]]
             batch_y = [data["classes"].index(c) for c in data["train_y"][i:i + batch_range]]
 
-            batch_x = Variable(torch.LongTensor(batch_x)).cuda(params["GPU"])
-            batch_y = Variable(torch.LongTensor(batch_y)).cuda(params["GPU"])
+            batch_x = Variable(torch.LongTensor(batch_x))
+            batch_y = Variable(torch.LongTensor(batch_y))
+
+            if use_cuda:
+                batch_x = batch_x.cuda(params["GPU"])
+                batch_y = batch_y.cuda(params["GPU"])
 
             optimizer.zero_grad()
             model.train()
@@ -95,7 +102,10 @@ def test(data, model, params, mode="test"):
          [params["VOCAB_SIZE"] + 1] * (params["MAX_SENT_LEN"] - len(sent))
          for sent in x]
 
-    x = Variable(torch.LongTensor(x)).cuda(params["GPU"])
+    use_cuda = torch.cuda.is_available()
+    x = Variable(torch.LongTensor(x))
+    if use_cuda:
+        x = x.cuda(params["GPU"])
     y = [data["classes"].index(c) for c in y]
 
     pred = np.argmax(model(x).cpu().data.numpy(), axis=1)
@@ -108,12 +118,12 @@ def main():
     parser = argparse.ArgumentParser(description="-----[CNN-classifier]-----")
     parser.add_argument("--mode", default="train", help="train: train (with test) a model / test: test saved models")
     parser.add_argument("--model", default="rand", help="available models: rand, static, non-static, multichannel")
-    parser.add_argument("--dataset", default="TREC", help="available datasets: MR, TREC")
+    parser.add_argument("--dataset", default="MR", help="available datasets: MR, TREC")
     parser.add_argument("--save_model", default=False, action='store_true', help="whether saving model or not")
     parser.add_argument("--early_stopping", default=False, action='store_true', help="whether to apply early stopping")
     parser.add_argument("--epoch", default=100, type=int, help="number of max epoch")
     parser.add_argument("--learning_rate", default=1.0, type=float, help="learning rate")
-    parser.add_argument("--gpu", default=-1, type=int, help="the number of gpu to be used")
+    parser.add_argument("--gpu", default=0, type=int, help="the number of gpu to be used")
 
     options = parser.parse_args()
     data = getattr(utils, 'read_{}'.format(options.dataset))()

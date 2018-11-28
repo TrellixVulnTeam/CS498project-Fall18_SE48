@@ -42,6 +42,7 @@ def load_sentences_and_labels():
     else:
         positive_examples = list(open("./data/rt-polarity.pos").readlines())
         negative_examples = list(open("./data/rt-polarity.neg").readlines())
+
     positive_examples = [s.strip() for s in positive_examples]
     negative_examples = [s.strip() for s in negative_examples]
     x_text = positive_examples + negative_examples
