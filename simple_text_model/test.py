@@ -12,7 +12,8 @@ import os
 import sys
 import torch
 from DataUtils.utils import *
-
+import time
+import torch.nn as nn
 
 def load_test_model(model, config):
     """
@@ -32,7 +33,7 @@ def load_test_model(model, config):
     return model
 
 
-def load_test_data(train_iter=None, dev_iter=None, test_iter=None, config=None):
+def load_test_data(train_iter=None, dev_iter=None, test_iter=None,config=None):
     """
     :param train_iter:  train data
     :param dev_iter:  dev data
@@ -72,6 +73,8 @@ class T_Inference(object):
     """
         Test Inference
     """
+    # model=model, train_iter=train_iter, dev_iter=dev_iter, test_iter=test_iter,
+    # alphabet=alphabet, use_crf=config.use_crf, config=config
     def __init__(self, model, data, path_source, path_result, alphabet, use_crf, config):
         """
         :param model:  nn model
@@ -89,30 +92,56 @@ class T_Inference(object):
         self.alphabet = alphabet
         self.config = config
         self.use_crf = use_crf
+        self.loss_function = self._loss(learning_algorithm=self.config.learning_algorithm)
+
+    @staticmethod
+    def _loss(learning_algorithm):
+        """
+        :param learning_algorithm:
+        :return:
+        """
+        if learning_algorithm == "SGD":
+            # loss_function = nn.CrossEntropyLoss(size_average=False)
+            loss_function = nn.CrossEntropyLoss(reduction='sum')
+            return loss_function
+        else:
+            # loss_function = nn.CrossEntropyLoss(size_average=True)
+            loss_function = nn.CrossEntropyLoss(reduction='elementwise_mean')
+            return loss_function
+
+    def _calculate_loss(self, feats, labels):
+        """
+        Args:
+            feats: size = (batch_size, seq_len, tag_size);  torch.Size([16, 2])
+            labels: size = (batch_size, seq_len);   torch.Size([16])
+        """
+        loss_value = self.loss_function(feats, labels)
+        return loss_value
 
     def infer2file(self):
-        """
-        :return: None
-        """
-        pass
+        # """
+        # :return: None
+        # """
         print("infer.....")
         self.model.eval()
         predict_labels = []
         predict_label = []
         all_count = len(self.data)
         now_count = 0
+
         for data in self.data:
             now_count += 1
-            sys.stdout.write("\rinfer with batch number {}/{} .".format(now_count, all_count))
-            word, char, mask, sentence_length, tags = self._get_model_args(data)
-            logit = self.model(word, char, sentence_length, train=False)
+            sys.stdout.write("\rinfer with batch number {}/{}.".format(now_count, all_count))
+            word, mask, sentence_length, labels, batch_size = self._get_model_args(data)
+            # logit = self.model(word, char, sentence_length, train=False)
+            logit = self.model(word, sentence_length, train=False)
             if self.use_crf is False:
                 predict_ids = torch_max(logit)
-                for id_batch in range(data.batch_length):
+                for id_batch in range(data.batch_length):   # batch_length = 16
                     inst = data.inst[id_batch]
                     label_ids = predict_ids[id_batch]
                     # maxId_batch = getMaxindex_batch(logit[id_batch])
-                    for id_word in range(inst.words_size):
+                    for id_word in range(inst.words_size):  # data.inst[1].words_size = 28
                         predict_label.append(self.alphabet.label_alphabet.from_id(label_ids[id_word]))
             else:
                 path_score, best_paths = self.model.crf_layer(logit, mask)
@@ -124,6 +153,18 @@ class T_Inference(object):
 
         print("\ninfer finished.")
         self.write2file(result=predict_label, path_source=self.path_source, path_result=self.path_result)
+
+
+
+    # this function is for online demo
+    def oneSentenceInf(self, sentence):
+        self.model.eval()
+        for batch_features in self.data:
+            word, mask, sentence_length, labels, batch_size = self._get_model_args(batch_features)
+            logit = self.model(word, sentence_length, train=False)
+        print(sentence + " is: {} (0 is negative, 1 is positive)".format(np.argmax(logit.detach().numpy())))
+
+
 
     @staticmethod
     def write2file(result, path_source, path_result):
@@ -163,14 +204,20 @@ class T_Inference(object):
         :param batch_features:  Batch Instance
         :return:
         """
+        # word = batch_features.word_features
+        # #char = batch_features.char_features
+        # mask = word > 0
+        # sentence_length = batch_features.sentence_length
+        # # desorted_indices = batch_features.desorted_indices
+        # tags = batch_features.label_features
+        # return word, mask, sentence_length, tags
+
         word = batch_features.word_features
-        char = batch_features.char_features
         mask = word > 0
         sentence_length = batch_features.sentence_length
-        # desorted_indices = batch_features.desorted_indices
-        tags = batch_features.label_features
-        return word, char, mask, sentence_length, tags
-
+        labels = batch_features.label_features
+        batch_size = batch_features.batch_length
+        return word, mask, sentence_length, labels, batch_size
 
 
 

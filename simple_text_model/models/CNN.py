@@ -52,11 +52,13 @@ class CNN(nn.Module):
         # cnn
         if self.wide_conv:
             print("Using Wide Convolution")
-            self.conv = [nn.Conv2d(in_channels=Ci, out_channels=kernel_nums, kernel_size=(K, D), stride=(1, 1),
+            self.conv = [nn.Conv2d(in_channels=Ci, out_channels=kernel_nums,
+                                   kernel_size=(K, D), stride=(1, 1),
                                    padding=(K // 2, 0), bias=False) for K in kernel_sizes]
         else:
             print("Using Narrow Convolution")
-            self.conv = [nn.Conv2d(in_channels=Ci, out_channels=kernel_nums, kernel_size=(K, D), bias=True) for K in kernel_sizes]
+            self.conv = [nn.Conv2d(in_channels=Ci, out_channels=kernel_nums,
+                                   kernel_size=(K, D), bias=True) for K in kernel_sizes]
 
         for conv in self.conv:
             if self.use_cuda:
@@ -72,12 +74,19 @@ class CNN(nn.Module):
         :param sentence_length:
         :return:
         """
-        x = self.embed(word)  # (N,W,D)
+
+        # (N,W,D) == (16, 38, 300)
+        # N is batch size; W is the max sentence length in that batch; D is embedding length
+        x = self.embed(word)
         x = self.dropout_embed(x)
-        x = x.unsqueeze(1)  # (N,Ci,W,D)
+        x = x.unsqueeze(1)  # (N,1,W,D), insert a singleton dimension
+        # list(N), each item is [1,W,D]
         x = [F.relu(conv(x)).squeeze(3) for conv in self.conv] #[(N,Co,W), ...]*len(Ks)
+        # list(4), each item is [16,200]
         x = [F.max_pool1d(i, i.size(2)).squeeze(2) for i in x] #[(N,Co), ...]*len(Ks)
         x = torch.cat(x, 1)
+        # [16,800]
         x = self.dropout(x)  # (N,len(Ks)*Co)
+        # [16,2], logit value for each sentence(batch)
         logit = self.linear(x)
         return logit

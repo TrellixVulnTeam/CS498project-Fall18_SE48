@@ -56,9 +56,9 @@ def get_params(config, alphabet):
 
     # save best model path
     config.save_best_model_path = config.save_best_model_dir
-    if config.test is False:
-        if os.path.exists(config.save_best_model_path):
-            shutil.rmtree(config.save_best_model_path)
+    # if config.test is False:
+    #     if os.path.exists(config.save_best_model_path):
+    #         shutil.rmtree(config.save_best_model_path)
 
     # get params
     config.embed_num = alphabet.word_alphabet.vocab_size  # word number
@@ -104,8 +104,16 @@ def save_dictionary(config):
         save_dict2file(config.alphabet.word_alphabet.words2id, config.word_dict_path)
         save_dict2file(config.alphabet.label_alphabet.words2id, config.label_dict_path)
         # copy to mulu
-        print("copy dictionary to {}".format(config.save_dir))
-        shutil.copytree(config.dict_directory, "/".join([config.save_dir, config.dict_directory]))
+        # print("copy dictionary to {}".format(config.save_dir))
+        # shutil.copytree(config.dict_directory, "/".join([config.save_dir, config.dict_directory]))
+
+
+def process_demo_sentence(config, sentence):
+    sentence = sentence
+    file = open("./Data/demo_sentence.txt","w")
+    file.write(sentence)
+    file.close()
+    return preprocessing(config)
 
 
 # load data / create alphabet / create iterator
@@ -116,7 +124,11 @@ def preprocessing(config):
     """
     print("Processing Data......")
 
-    if config.d_name == "mr":
+    if config.demo:
+        train_file = "./Data/sst_binary/stsa.binary.trai"
+        dev_file = "./Data/sst_binary/stsa.binary.dev"
+        test_file = "./Data/demo_sentence.txt"
+    elif config.d_name == "mr":
         train_file = config.train_file
         dev_file = config.dev_file
         test_file = config.test_file
@@ -124,18 +136,23 @@ def preprocessing(config):
         train_file = "./Data/sst_binary/stsa.binary.trai"
         dev_file = "./Data/sst_binary/stsa.binary.dev"
         test_file = "./Data/sst_binary/stsa.binary.test"
+    elif config.d_name == "trec":
+        train_file = "./Data/trec_entity_class/TREC_train.txt"
+        dev_file = "./Data/trec_entity_class/TREC_dev.txt"
+        test_file = "./Data/trec_entity_class/TREC_test.txt"
+
+
 
     #---------------------------------
     # 1.read file (what is dataLoader)
     data_loader = DataLoader(path=[train_file, dev_file, test_file],
-                             shuffle=True, config=config, dataset = config.d_name)
+                             shuffle=True, config=config, dataset = config.d_name, demo=config.demo)
     train_data, dev_data, test_data = data_loader.dataLoader()
     print("train sentence {}, dev sentence {}, test sentence {}.".format(len(train_data), len(dev_data), len(test_data)))
 
     # 2.create and save data dictionary
     data_dict = {"train_data": train_data, "dev_data": dev_data, "test_data": test_data}
     if config.save_pkl:
-        # pcl.save(obj=data_dict, path=os.path.join(config.pkl_directory, config.pkl_data))
         torch.save(obj=data_dict, f=os.path.join(config.pkl_directory, config.pkl_data))
 
 
@@ -202,7 +219,6 @@ def pre_embed(config, alphabet):
         pretrain_embed = p.get_embed()
 
         embed_dict = {"pretrain_embed": pretrain_embed}
-        # pcl.save(obj=embed_dict, path=os.path.join(config.pkl_directory, config.pkl_embed))
         torch.save(obj=embed_dict, f=os.path.join(config.pkl_directory, config.pkl_embed))
 
     return pretrain_embed
@@ -217,13 +233,14 @@ def load_model(config):
     model = Text_Classification(config)
     if config.use_cuda is True:
         model = model.cuda()
-    if config.test is True:
+    if config.test is True or config.demo is True:
+    # if config.test is True or config.demo is True:
         model = load_test_model(model, config)
     print(model)
     return model
 
 
-def load_data(config):
+def load_data(config, sentence=None):
     """
     :param config:  config
     :return: batch data iterator and alphabet
@@ -244,36 +261,66 @@ def load_data(config):
         if not os.path.isdir(config.pkl_directory):
             os.makedirs(config.pkl_directory)
         # 3.pre-process and read data
-        train_iter, dev_iter, test_iter, alphabet = preprocessing(config)
+        if not config.demo:
+            train_iter, dev_iter, test_iter, alphabet = preprocessing(config)
+        else:
+            train_iter, dev_iter, test_iter, alphabet = process_demo_sentence(config, sentence)
+
         # 4.load pre-train embedding
         config.pretrained_weight = pre_embed(config=config, alphabet=alphabet)
 
     # ------For test------
     elif ((config.train is True) and (config.process is False)) or (config.test is True):
-        print("load data from pkl file")
-        # load alphabet from pkl
-        # alphabet_dict = pcl.load(path=os.path.join(config.pkl_directory, config.pkl_alphabet))
+        #print("load data from pkl file")
+        print("process data")
+
+        # 1.load alphabet from pkl
         alphabet_dict = torch.load(f=os.path.join(config.pkl_directory, config.pkl_alphabet))
         print(alphabet_dict.keys())
         alphabet = alphabet_dict["alphabet"]
-        # load iter from pkl
-        # iter_dict = pcl.load(path=os.path.join(config.pkl_directory, config.pkl_iter))
-        iter_dict = torch.load(f=os.path.join(config.pkl_directory, config.pkl_iter))
-        print(iter_dict.keys())
-        train_iter, dev_iter, test_iter = iter_dict.values()
-        # train_iter, dev_iter, test_iter = iter_dict["train_iter"], iter_dict["dev_iter"], iter_dict["test_iter"]
-        # load embed from pkl
+
+        # 2.load iter
+        train_iter, dev_iter, test_iter, alphabet = preprocessing(config)
+
+        # 3.load embed from pkl
         config.pretrained_weight = None
-        if os.path.exists(os.path.join(config.pkl_directory, config.pkl_embed)):
-            # embed_dict = pcl.load(os.path.join(config.pkl_directory, config.pkl_embed))
-            embed_dict = torch.load(f=os.path.join(config.pkl_directory, config.pkl_embed))
-            print(embed_dict.keys())
-            embed = embed_dict["pretrain_embed"]
-            config.pretrained_weight = embed
+
+        # if os.path.exists(os.path.join(config.pkl_directory, config.pkl_embed)):
+        #     embed_dict = torch.load(f=os.path.join(config.pkl_directory, config.pkl_embed))
+        #     print(embed_dict.keys())
+        #     embed = embed_dict["pretrain_embed"]
+        #     config.pretrained_weight = embed
+
+        # 4.load embedding
+        config.pretrained_weight = pre_embed(config=config, alphabet=alphabet)
+
+    # ------For demo------
+    elif config.demo is True :
+        print("process demo sentence")
+
+        # 1.load alphabet from pkl
+        # alphabet_dict = torch.load(f=os.path.join(config.pkl_directory, config.pkl_alphabet))
+        # print(alphabet_dict.keys())
+        # alphabet = alphabet_dict["alphabet"]
+
+        # 2.load iter
+        if not config.demo:
+            train_iter, dev_iter, test_iter, alphabet = preprocessing(config)
+        else:
+            train_iter, dev_iter, test_iter, alphabet = process_demo_sentence(config, sentence)
+
+        # 3.load embed from pkl
+        config.pretrained_weight = None
+
+        # 4.load embedding
+        config.pretrained_weight = pre_embed(config=config, alphabet=alphabet)
+
+
 
     end_time = time.time()
     print("All Data/Alphabet/Iterator Use Time {:.4f}".format(end_time - start_time))
     print("****************************************")
+
     return train_iter, dev_iter, test_iter, alphabet
 
 

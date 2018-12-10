@@ -76,7 +76,8 @@ def torch_max(output):
     """
     # print(output)
     batch_size = output.size(0)
-    _, arg_max = torch.max(output, dim=2)
+    #_, arg_max = torch.max(output, dim=2)
+    _, arg_max = torch.max(output, dim=1)
     # print(arg_max)
     label = []
     for i in range(batch_size):
@@ -117,10 +118,10 @@ def save_best_model(model, save_dir, model_name, best_eval):
         save_path = os.path.join(save_dir, model_name)
         print("save best model to {}".format(save_path))
         # if os.path.exists(save_path):  os.remove(save_path)
-        output = open(save_path, mode="wb")
-        torch.save(model.state_dict(), output)
-        # torch.save(model.state_dict(), save_path)
-        output.close()
+        #output = open(save_path, mode="wb")
+        # torch.save(model.state_dict(), output)
+        torch.save(model.state_dict(), save_path)
+        #output.close()
         best_eval.early_current_patience = 0
 
 

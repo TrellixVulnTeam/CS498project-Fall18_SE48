@@ -23,6 +23,8 @@ from DataUtils.utils import *
 from DataUtils.Common import *
 torch.manual_seed(seed_num)
 random.seed(seed_num)
+import visdom
+
 
 
 class Train(object):
@@ -41,8 +43,7 @@ class Train(object):
             config : config
         """
         print("Training Start......")
-        # for k, v in kwargs.items():
-        #     self.__setattr__(k, v)
+
         self.train_iter = kwargs["train_iter"]
         self.dev_iter = kwargs["dev_iter"]
         self.test_iter = kwargs["test_iter"]
@@ -64,10 +65,12 @@ class Train(object):
         :return:
         """
         if learning_algorithm == "SGD":
-            loss_function = nn.CrossEntropyLoss(size_average=False)
+            # loss_function = nn.CrossEntropyLoss(size_average=False)
+            loss_function = nn.CrossEntropyLoss(reduction='sum')
             return loss_function
         else:
-            loss_function = nn.CrossEntropyLoss(size_average=True)
+            # loss_function = nn.CrossEntropyLoss(size_average=True)
+            loss_function = nn.CrossEntropyLoss(reduction='elementwise_mean')
             return loss_function
 
     def _clip_model_norm(self, clip_max_norm_use, clip_max_norm):
@@ -146,8 +149,8 @@ class Train(object):
     def _calculate_loss(self, feats, labels):
         """
         Args:
-            feats: size = (batch_size, seq_len, tag_size)
-            labels: size = (batch_size, seq_len)
+            feats: size = (batch_size, seq_len, tag_size);  torch.Size([16, 2])
+            labels: size = (batch_size, seq_len);   torch.Size([16])
         """
         loss_value = self.loss_function(feats, labels)
         return loss_value
@@ -161,6 +164,16 @@ class Train(object):
         clip_max_norm = self.config.clip_max_norm
         new_lr = self.config.learning_rate
 
+        # vis = visdom.Visdom()
+        # title_str = self.config.model_name + ' Training Loss'
+        # loss_window = vis.line(X=torch.zeros((1,)).cpu(),
+        #                        Y=torch.zeros((1)).cpu(),
+        #                        opts=dict(xlabel='minibatches',
+        #                                  ylabel='Loss',
+        #                                  title=title_str,
+        #                                  legend=['Loss']))
+
+        i = 0
         for epoch in range(1, epochs + 1):
 
             # 1.print current epoch
@@ -184,11 +197,20 @@ class Train(object):
 
             # 4.forward and backward at each batch
             for batch_count, batch_features in enumerate(self.train_iter):
+                i += 1
                 backward_count += 1
                 # self.optimizer.zero_grad()
                 word, mask, sentence_length, labels, batch_size = self._get_model_args(batch_features)
                 logit = self.model(word, sentence_length, train=True)
                 loss = self._calculate_loss(logit, labels)
+
+                # vis.line(
+                #     X=torch.ones((1, 1)).cpu() * i,
+                #     Y=torch.Tensor([loss]).unsqueeze(0).cpu(),
+                #     win=loss_window,
+                #     update='append')
+
+
                 loss.backward()
                 self._clip_model_norm(clip_max_norm_use, clip_max_norm)
                 self._optimizer_batch_step(config=self.config, backward_count=backward_count)
@@ -198,13 +220,18 @@ class Train(object):
                     accuracy = self.getAcc(logit, labels, batch_size)
                     sys.stdout.write(
                         "\nbatch_count = [{}] , loss is {:.6f}, [accuracy is {:.6f}%]"
-                            .format(batch_count + 1, loss.data[0], accuracy))
+                            .format(batch_count + 1, loss.item(), accuracy))
+
+
 
 
             # 5.end time and print eval info of this batch
             end_time = time.time()
             print("\nTrain Time {:.3f}".format(end_time - start_time), end="")
-            self.eval(model=self.model, epoch=epoch, config=self.config)
+            dev_accuracy, dev_average_loss, test_accuracy, test_average_loss = \
+                self.eval(model=self.model, epoch=epoch, config=self.config)
+
+
 
 
             # 6.save model of each epoch and check early stop
@@ -221,14 +248,15 @@ class Train(object):
         :return:
         """
         eval_start_time = time.time()
-        self.eval_batch(self.dev_iter, model, self.best_score, epoch, config, test=False)
+        dev_accuracy, dev_average_loss = self.eval_batch(self.dev_iter, model, self.best_score, epoch, config, test=False)
         eval_end_time = time.time()
         print("Dev Time {:.3f}".format(eval_end_time - eval_start_time))
 
         eval_start_time = time.time()
-        self.eval_batch(self.test_iter, model, self.best_score, epoch, config, test=True)
+        test_accuracy, test_average_loss = self.eval_batch(self.test_iter, model, self.best_score, epoch, config, test=True)
         eval_end_time = time.time()
         print("Test Time {:.3f}".format(eval_end_time - eval_start_time))
+        return dev_accuracy, dev_average_loss, test_accuracy, test_average_loss
 
     def _model2file(self, model, config, epoch):
         """
@@ -270,6 +298,8 @@ class Train(object):
         accuracy = float(corrects) / size * 100.0
         average_loss = float(loss) / size
 
+        print("\naccuracy: {}.".format(accuracy))
+        print("\naverage_loss: {}.".format(average_loss))
         test_flag = "Test"
         if test is False:
             print()
@@ -288,6 +318,7 @@ class Train(object):
             print("The Current Best Test Accuracy: accuracy = {:.6f}%".format(best_score.p))
         if test is True:
             best_score.best_test = False
+        return accuracy, average_loss
 
     @staticmethod
     def getAcc(logit, target, batch_size):

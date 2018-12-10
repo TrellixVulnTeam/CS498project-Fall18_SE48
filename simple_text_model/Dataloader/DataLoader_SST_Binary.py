@@ -81,7 +81,7 @@ class DataLoader(DataLoaderHelp):
     """
     DataLoader
     """
-    def __init__(self, path, shuffle, config, dataset):
+    def __init__(self, path, shuffle, config, dataset, demo):
         """
         :param path: data path list
         :param shuffle:  shuffle bool
@@ -93,6 +93,7 @@ class DataLoader(DataLoaderHelp):
         self.path = path
         self.shuffle = shuffle
         self.dataset = dataset
+        self.demo = demo
 
     def dataLoader(self):
         """
@@ -106,7 +107,7 @@ class DataLoader(DataLoaderHelp):
 
         for id_data in range(len(path)):
             print("Loading Data Form {}".format(path[id_data]))
-            insts = self._Load_Each_Data(path=path[id_data], shuffle=shuffle, dataset = dataset)
+            insts = self._Load_Each_Data(path=path[id_data], shuffle=shuffle, dataset = dataset, demo = self.demo)
 
             if shuffle is True and id_data == 0:
                 print("shuffle train data......")
@@ -125,7 +126,7 @@ class DataLoader(DataLoaderHelp):
             return self.data_list[0], self.data_list[1]
 
 
-    def _Load_Each_Data(self, path=None, shuffle=False, dataset=None):
+    def _Load_Each_Data(self, path=None, shuffle=False, dataset=None, demo=False):
         """
         :param path:
         :param shuffle:
@@ -134,6 +135,8 @@ class DataLoader(DataLoaderHelp):
         assert path is not None, "The Data Path Is Not Allow Empty."
         insts = []
         now_lines = 0
+
+
 
         # 1.open the file
         with open(path, encoding="UTF-8") as f:
@@ -144,7 +147,7 @@ class DataLoader(DataLoaderHelp):
             # 3.Load each line
             for line in f.readlines():
 
-                # 4.strip by space
+                # 4.strip leading whitespace are removed
                 line = line.strip()
                 now_lines += 1
                 if now_lines % 200 == 0:
@@ -154,27 +157,34 @@ class DataLoader(DataLoaderHelp):
 
 
                 inst = Instance()
-                line = line.split()
-                # label = line[0]
-                # word = " ".join(line[1:])
-                # if label not in ["0", "1"]:
-                #     print("Error line: ", " ".join(line))
-                #     continue
-                label = None
-                word = None
 
-                if dataset == 'sst':
+                if demo and path == "./Data/demo_sentence.txt":
+                    word = line
+                    label = '?'
+                elif dataset == 'trec':
+                    line = line.split(':')
                     label = line[0]
-                    word = " ".join(line[1:])
-                    if label not in ["0", "1"]:
+                    word = line[1]
+                    if label not in ["ABBR", "DESC", "ENTY", "HUM", "LOC", "NUM"]:
                         print("Error line: ", " ".join(line))
                         continue
-                elif dataset == 'mr':
-                    label = line[-1]
-                    word = " ".join(line[:-6])
-                    if label not in ["0", "1", "2", "3", "4"]:
-                        print("Error line: ", " ".join(line))
-                        continue
+                else:
+                    line = line.split()
+                    label = None
+                    word = None
+
+                    if dataset == 'sst':
+                        label = line[0]
+                        word = " ".join(line[1:])
+                        if label not in ["0", "1"]:
+                            print("Error line: ", " ".join(line))
+                            continue
+                    elif dataset == 'mr':
+                        label = line[-1]
+                        word = " ".join(line[:-6])
+                        if label not in ["0", "1", "2", "3", "4"]:
+                            print("Error line: ", " ".join(line))
+                            continue
 
 
                 inst.words = self._clean_str(word).split()

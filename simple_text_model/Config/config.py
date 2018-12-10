@@ -125,9 +125,9 @@ class Configurable(myconf):
     def save_direction(self):
         return self._config.get('Save', 'save_direction')
 
-    @property
-    def dict_directory(self):
-        return self._config.get('Save', 'dict_directory')
+    # @property
+    # def dict_directory(self):
+    #     return self._config.get('Save', 'dict_directory')
 
     @property
     def word_dict(self):
@@ -137,13 +137,13 @@ class Configurable(myconf):
     def label_dict(self):
         return self._config.get('Save', 'label_dict')
 
-    @property
-    def model_name(self):
-        return self._config.get('Save', 'model_name')
+    # @property
+    # def model_name(self):
+    #     return self._config.get('Save', 'model_name')
 
-    @property
-    def save_best_model_dir(self):
-        return self._config.get('Save', 'save_best_model_dir')
+    # @property
+    # def save_best_model_dir(self):
+    #     return self._config.get('Save', 'save_best_model_dir')
 
     @property
     def save_model(self):
@@ -166,13 +166,13 @@ class Configurable(myconf):
     def wide_conv(self):
         return self._config.getboolean("Model", "wide_conv")
 
-    @property
-    def model_cnn(self):
-        return self._config.getboolean("Model", "model_cnn")
-
-    @property
-    def model_bilstm(self):
-        return self._config.getboolean("Model", "model_bilstm")
+    # @property
+    # def model_cnn(self):
+    #     return self._config.getboolean("Model", "model_cnn")
+    #
+    # @property
+    # def model_bilstm(self):
+    #     return self._config.getboolean("Model", "model_bilstm")
 
     @property
     def lstm_layers(self):
@@ -292,6 +292,18 @@ class Configurable(myconf):
     def log_interval(self):
         return self._config.getint("Train", "log_interval")
 
+    @save_direction.setter
+    def save_direction(self, value):
+        self._save_direction = value
+
+
+    # @model_name.setter
+    # def model_name(self, value):
+    #     self._model_name = value
+
+    # @save_best_model_dir.setter
+    # def save_best_model_dir(self, value):
+    #     self._save_best_model_dir = value
 
 
 

@@ -2,12 +2,10 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="90bc01cc-3b48-41e1-a7be-ac9791e484cf" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/../kim_cnn_galsang/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../kim_cnn_galsang/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../kim_cnn_galsang/model.py" beforeDir="false" afterPath="$PROJECT_DIR$/../kim_cnn_galsang/model.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../kim_cnn_galsang/run.py" beforeDir="false" afterPath="$PROJECT_DIR$/../kim_cnn_galsang/run.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cnn_pytorch.py" beforeDir="false" afterPath="$PROJECT_DIR$/cnn_pytorch.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/data_helpers.py" beforeDir="false" afterPath="$PROJECT_DIR$/data_helpers.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../simple_text_model/DataUtils/mainHelp.py" beforeDir="false" afterPath="$PROJECT_DIR$/../simple_text_model/DataUtils/mainHelp.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../simple_text_model/Dataloader/DataLoader_SST_Binary.py" beforeDir="false" afterPath="$PROJECT_DIR$/../simple_text_model/Dataloader/DataLoader_SST_Binary.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../simple_text_model/Save_pkl/pkl_embed.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../simple_text_model/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/../simple_text_model/main.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -19,9 +17,9 @@
     <session id="644545123">
       <usages-collector id="statistics.lifecycle.project">
         <counts>
-          <entry key="project.closed" value="2" />
-          <entry key="project.open.time.0" value="2" />
-          <entry key="project.opened" value="2" />
+          <entry key="project.closed" value="3" />
+          <entry key="project.open.time.0" value="3" />
+          <entry key="project.opened" value="3" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.open">
@@ -50,20 +48,15 @@
     </session>
   </component>
   <component name="FileEditorManager">
-    <leaf>
+    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/cnn_pytorch.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="265">
-              <caret line="45" column="23" selection-start-line="45" selection-start-column="19" selection-end-line="45" selection-end-column="23" />
+            <state relative-caret-position="210">
+              <caret line="18" lean-forward="true" selection-start-line="18" selection-end-line="18" />
               <folding>
                 <element signature="e#0#47#0" expanded="true" />
                 <element signature="e#2420#2493#0" />
-                <element signature="e#2715#2786#0" />
-                <element signature="e#3257#3566#0" />
-                <element signature="e#3607#4451#0" />
-                <element signature="e#4705#6548#0" />
-                <element signature="e#5815#6737#0" />
               </folding>
             </state>
           </provider>
@@ -72,7 +65,7 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/data_helpers.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1273">
+            <state relative-caret-position="2037">
               <caret line="101" column="40" selection-start-line="101" selection-start-column="40" selection-end-line="101" selection-end-column="40" />
               <folding>
                 <element signature="e#0#9#0" expanded="true" />
@@ -106,9 +99,10 @@
     </option>
   </component>
   <component name="ProjectFrameBounds">
+    <option name="x" value="-1646" />
     <option name="y" value="23" />
     <option name="width" value="1680" />
-    <option name="height" value="963" />
+    <option name="height" value="960" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectView">
@@ -207,10 +201,10 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="0" y="23" width="1680" height="963" extended-state="0" />
+    <frame x="-1646" y="23" width="1680" height="960" extended-state="0" />
     <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.49828768" visible="true" weight="0.15750916" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.49828768" visible="true" weight="0.15934066" />
       <window_info id="Structure" order="1" sideWeight="0.5017123" side_tool="true" weight="0.15750916" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
@@ -235,13 +229,7 @@
   </component>
   <component name="editorHistoryManager">
     <entry file="file://$PROJECT_DIR$/utils.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state>
-          <folding>
-            <element signature="e#0#9#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
+      <provider selected="true" editor-type-id="text-editor" />
     </entry>
     <entry file="file://$PROJECT_DIR$/README.md">
       <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
@@ -251,28 +239,23 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/data_helpers.py">
+    <entry file="file://$PROJECT_DIR$/cnn_pytorch.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1273">
-          <caret line="101" column="40" selection-start-line="101" selection-start-column="40" selection-end-line="101" selection-end-column="40" />
+        <state relative-caret-position="210">
+          <caret line="18" lean-forward="true" selection-start-line="18" selection-end-line="18" />
           <folding>
-            <element signature="e#0#9#0" expanded="true" />
+            <element signature="e#0#47#0" expanded="true" />
+            <element signature="e#2420#2493#0" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/cnn_pytorch.py">
+    <entry file="file://$PROJECT_DIR$/data_helpers.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="265">
-          <caret line="45" column="23" selection-start-line="45" selection-start-column="19" selection-end-line="45" selection-end-column="23" />
+        <state relative-caret-position="2037">
+          <caret line="101" column="40" selection-start-line="101" selection-start-column="40" selection-end-line="101" selection-end-column="40" />
           <folding>
-            <element signature="e#0#47#0" expanded="true" />
-            <element signature="e#2420#2493#0" />
-            <element signature="e#2715#2786#0" />
-            <element signature="e#3257#3566#0" />
-            <element signature="e#3607#4451#0" />
-            <element signature="e#4705#6548#0" />
-            <element signature="e#5815#6737#0" />
+            <element signature="e#0#9#0" expanded="true" />
           </folding>
         </state>
       </provider>

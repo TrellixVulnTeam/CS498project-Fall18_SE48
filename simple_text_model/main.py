@@ -9,6 +9,7 @@
     FUNCTION : main
 """
 
+#! /usr/bin/env python
 import argparse
 import datetime
 import Config.config as configurable
@@ -56,12 +57,18 @@ def start_test(train_iter, dev_iter, test_iter, model, alphabet, config):
     :return:  None
     """
     print("\nTesting Start......")
-    print("Test is not Complete Now, Future will update, Sorry.")
-    exit()
     data, path_source, path_result = load_test_data(train_iter, dev_iter, test_iter, config)
-    infer = T_Inference(model=model, data=data, path_source=path_source, path_result=path_result, alphabet=alphabet,
-                        use_crf=config.use_crf, config=config)
+    infer = T_Inference(model=model, data=data, path_source = path_source, path_result= path_result,
+                         alphabet=alphabet, use_crf=config.use_crf, config=config)
     infer.infer2file()
+    print("Finished Test.")
+
+
+def sentence_demo(train_iter, dev_iter, test_iter, model, alphabet, config, sentence):
+    data, path_source, path_result = load_test_data(train_iter, dev_iter, test_iter, config)
+    infer = T_Inference(model=model, data=data, path_source = path_source, path_result= path_result,
+                         alphabet=alphabet, use_crf=config.use_crf, config=config)
+    infer.oneSentenceInf(sentence)
     print("Finished Test.")
 
 
@@ -73,13 +80,13 @@ def main():
 
     # 1.save file
     config.mulu = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-    # config.add_args(key="mulu", value=datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
     config.save_dir = os.path.join(config.save_direction, config.mulu)
     if not os.path.isdir(config.save_dir):
         os.makedirs(config.save_dir)
 
-    # 2.get data, iter, alphabet
-    train_iter, dev_iter, test_iter, alphabet = load_data(config=config)
+    # 2.get data, iter, alphabet, load_data is in mainHelp.py
+    sentence = "The moive is good!"
+    train_iter, dev_iter, test_iter, alphabet = load_data(config=config, sentence=sentence)
 
     # 3.get params
     get_params(config=config, alphabet=alphabet)
@@ -96,6 +103,9 @@ def main():
     elif config.test is True:
         start_test(train_iter, dev_iter, test_iter, model, alphabet, config)
         exit()
+    elif config.demo is True:
+        sentence_demo(train_iter, dev_iter, test_iter, model, alphabet, config, sentence)
+        exit()
 
 
 def parse_argument():
@@ -107,19 +117,37 @@ def parse_argument():
     parser.add_argument("-c", "--config",
                         dest="config_file", type=str, default="./Config/config.cfg",help="config path")
     parser.add_argument("--train",
-                        dest="train", action="store_true", default=True, help="train model")
-    parser.add_argument("-p", "--process",
-                        dest="process", action="store_true", default=True, help="data process")
+                        dest="train", type=bool, default=False, help="train model")
+    parser.add_argument("--demo",
+                        dest="demo", type=bool, default=True, help="predict for one sentence")
     parser.add_argument("-t", "--test",
-                        dest="test", action="store_true", default=False, help="test model")
+                        dest="test", type=bool, default=False, help="test model")
+    parser.add_argument("-p", "--process",
+                        dest="process", type=bool, default=True, help="data process")
     parser.add_argument("--t_model",
-                        dest="t_model", type=str, default=None, help="model for test")
+                        dest="t_model", type=str, default="./Save_BModel/text_model.pt", help="model for test")
     parser.add_argument("--t_data",
-                        dest="t_data", type=str, default=None, help="data[train dev test None] for test model")
+                        dest="t_data", type=str, default="test", help="data[train dev test None] for test model")
     parser.add_argument("--data_name",
-                        dest="d_name", type=str, default="mr", help="the name of dataset")
+                        dest="d_name", type=str, default="sst", help="the name of dataset")
     parser.add_argument("--predict",
-                        dest="predict", action="store_true", default=False, help="predict model")
+                        dest="predict", type=bool, default=False, help="predict model")
+    parser.add_argument("--use_crf",
+                        dest="use_crf", type=bool, default=False, help="whether use crf in evaluation")
+    parser.add_argument("--model",
+                        dest="model", type=str, default="cnn", choices=["cnn", "bilstm", "cnn_bilstm_att"])
+    parser.add_argument("--dict_directory",
+                        dest="dict_directory", type=str, default="./Save_dictionary_cnn", help="dictionary save path")
+    parser.add_argument("--save_direction",
+                        dest="save_direction", type=str, default="./save_direction_cnn", help="model check point save path")
+
+    parser.add_argument("--save_best_model_dir",
+                        dest="save_best_model_dir", type=str, default="./Save_BModel_CNN",
+                        help="best model directory")
+    parser.add_argument("--model_name",
+                        dest="model_name", type=str, default="cnn_model", help="model name")
+
+
     args = parser.parse_args()
 
     # 1.load config_file into config
@@ -128,13 +156,39 @@ def parse_argument():
     config.train = args.train
     config.process = args.process
     config.test = args.test
+    config.demo = args.demo
     config.t_model = args.t_model
     config.t_data = args.t_data
     config.predict = args.predict
     config.d_name = args.d_name
+    config.use_crf = args.use_crf
+    config.model = args.model
+    config.dict_directory = args.dict_directory
+    config.model_name = args.model_name
+
+    if config.model == "cnn":
+        config.save_best_model_dir = "./Save_BModel_CNN"
+        config.dict_directory = "./Save_dictionary_cnn"
+        name = "cnn_model_" + config.d_name
+        config.t_model = "./Save_BModel_CNN/"+name+".pt"
+        config.model_name = name
+
+    elif config.model == "bilstm":
+        config.save_best_model_dir = "./Save_BModel_BiLSTM"
+        config.dict_directory = "./Save_dictionary_bilstm"
+        name = "bilstm_model_" + config.d_name
+        config.t_model = "./Save_BModel_BiLSTM/"+name+".pt"
+        config.model_name = name
+    elif config.model == "cnn_bilstm_att":
+        config.save_best_model_dir = "./Save_BModel_C-BiLSTM-Attention"
+        config.dict_directory = "./Save_dictionary_cnn_bilstm_att"
+        name = "cnn_bilstm_attention_model_" + config.d_name
+        config.t_model = "./Save_BModel_C-BiLSTM-Attention/"+name+".pt"
+        config.model_name = name
+
 
     # 3.check config
-    if config.test is True:
+    if config.test is True or config.demo is True:
         config.train = False
     if config.t_data not in [None, "train", "dev", "test"]:
         print("\nUsage")
@@ -147,6 +201,7 @@ def parse_argument():
     print("Data Process : {}".format(config.process))
     print("Train model : {}".format(config.train))
     print("Test model : {}".format(config.test))
+    print("demo model : {}".format(config.demo))
     print("t_model : {}".format(config.t_model))
     print("t_data : {}".format(config.t_data))
     print("predict : {}".format(config.predict))
@@ -164,8 +219,6 @@ if __name__ == "__main__":
     # set seed for GPU, if GPU is available
     if config.use_cuda is True:
         print("Using GPU To Train......")
-        # torch.backends.cudnn.enabled = True
-        # torch.backends.cudnn.deterministic = True
         torch.cuda.manual_seed(seed_num)
         torch.cuda.manual_seed_all(seed_num)
         print("torch.cuda.initial_seed", torch.cuda.initial_seed())

@@ -1,0 +1,10 @@
+#!/bin/bash
+#python main.py --model "cnn" --data_name "sst"
+#python main.py --model "cnn" --data_name "mr"
+#python main.py --model "cnn" --data_name "trec"
+#python main.py --model "bilstm" --data_name "sst"
+#python main.py --model "bilstm" --data_name "mr"
+#python main.py --model "bilstm" --data_name "trec"
+#python main.py --model "cnn_bilstm_att" --data_name "sst"
+#python main.py --model "cnn_bilstm_att" --data_name "mr"
+python main.py --model "cnn_bilstm_att" --data_name "trec"

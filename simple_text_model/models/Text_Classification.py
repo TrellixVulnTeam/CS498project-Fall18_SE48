@@ -16,6 +16,7 @@ import numpy as np
 import time
 from models.BiLSTM import BiLSTM
 from models.CNN import CNN
+from models.CNN_BiLSTM_Attention import CNN_BiLSTM_Attention
 from DataUtils.Common import *
 torch.manual_seed(seed_num)
 random.seed(seed_num)
@@ -49,17 +50,25 @@ class Text_Classification(nn.Module):
         self.conv_filter_nums = config.conv_filter_nums
         self.use_cuda = config.use_cuda
 
-        if self.config.model_bilstm:
+        if self.config.model == "bilstm":
             self.model = BiLSTM(embed_num=self.embed_num, embed_dim=self.embed_dim, label_num=self.label_num,
                                 paddingId=self.paddingId, dropout_emb=self.dropout_emb, dropout=self.dropout,
                                 lstm_hiddens=self.lstm_hiddens, lstm_layers=self.lstm_layers,   # special attributes
                                 pretrained_embed=self.pretrained_embed, pretrained_weight=self.pretrained_weight,
                                 use_cuda=self.use_cuda)
-        elif self.config.model_cnn:
+        elif self.config.model == "cnn":
             self.model = CNN(embed_num=self.embed_num, embed_dim=self.embed_dim, label_num=self.label_num,
                              paddingId=self.paddingId, dropout_emb=self.dropout_emb, dropout=self.dropout,
                              conv_filter_nums=self.conv_filter_nums, conv_filter_sizes=self.conv_filter_sizes,
                              wide_conv=self.wide_conv,  # special attribute
+                             pretrained_embed=self.pretrained_embed, pretrained_weight=self.pretrained_weight,
+                             use_cuda=self.use_cuda)
+        elif self.config.model == "cnn_bilstm_att":
+            self.model = CNN_BiLSTM_Attention(embed_num=self.embed_num, embed_dim=self.embed_dim, label_num=self.label_num,
+                             paddingId=self.paddingId, dropout_emb=self.dropout_emb, dropout=self.dropout,
+                             conv_filter_nums=self.conv_filter_nums, conv_filter_sizes=self.conv_filter_sizes,
+                             # wide_conv=self.wide_conv,  # special attribute
+                             kernel_num=200,  kernel_sizes = [3,4,5], lstm_hidden_dim = 300, lstm_num_layers = 1,
                              pretrained_embed=self.pretrained_embed, pretrained_weight=self.pretrained_weight,
                              use_cuda=self.use_cuda)
 
