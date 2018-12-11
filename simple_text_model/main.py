@@ -135,7 +135,7 @@ def parse_argument():
     parser.add_argument("--use_crf",
                         dest="use_crf", type=bool, default=False, help="whether use crf in evaluation")
     parser.add_argument("--model",
-                        dest="model", type=str, default="cnn", choices=["cnn", "bilstm", "cnn_bilstm_att"])
+                        dest="model", type=str, default="cnn_bilstm_att", choices=["cnn", "bilstm", "cnn_bilstm_att"])
     parser.add_argument("--dict_directory",
                         dest="dict_directory", type=str, default="./Save_dictionary_cnn", help="dictionary save path")
     parser.add_argument("--save_direction",
